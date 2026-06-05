@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/rootLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000">
+
+    <!-- LOGIN SCREEN -->
+    <LinearLayout
+        android:id="@+id/loginScreen"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:padding="32dp"
+        android:visibility="visible">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="SUICIDE SQUAD"
+            android:textColor="#cc0000"
+            android:textSize="26sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.15"
+            android:layout_marginBottom="4dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="HACK DIVISION"
+            android:textColor="#bb3333"
+            android:textSize="12sp"
+            android:letterSpacing="0.3"
+            android:layout_marginBottom="40dp" />
+
+        <EditText
+            android:id="@+id/usernameInput"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="@drawable/bg_input"
+            android:padding="14dp"
+            android:textColor="#f0f0f0"
+            android:textColorHint="#666666"
+            android:hint="username"
+            android:inputType="text"
+            android:layout_marginBottom="12dp" />
+
+        <EditText
+            android:id="@+id/passwordInput"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="@drawable/bg_input"
+            android:padding="14dp"
+            android:textColor="#f0f0f0"
+            android:textColorHint="#666666"
+            android:hint="password"
+            android:inputType="textPassword"
+            android:layout_marginBottom="24dp" />
+
+        <Button
+            android:id="@+id/loginBtn"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:background="@drawable/bg_btn"
+            android:text="SIGN IN"
+            android:textColor="#ffffff"
+            android:textSize="14sp"
+            android:letterSpacing="0.2"
+            android:stateListAnimator="@null" />
+
+        <TextView
+            android:id="@+id/errorText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#ff1a1a"
+            android:textSize="12sp"
+            android:layout_marginTop="16dp"
+            android:gravity="center"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <!-- DASHBOARD -->
+    <LinearLayout
+        android:id="@+id/dashboardScreen"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="#000000"
+        android:visibility="gone">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:background="#0a0a0a"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="16dp">
+
+            <TextView
+                android:id="@+id/userLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:textColor="#cc0000"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/logoutBtn"
+                android:layout_width="wrap_content"
+                android:layout_height="32dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:background="@drawable/bg_btn_small"
+                android:text="LOGOUT"
+                android:textColor="#ffffff"
+                android:textSize="11sp"
+                android:paddingHorizontal="12dp"
+                android:stateListAnimator="@null" />
+        </RelativeLayout>
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:padding="16dp"
+            android:fillViewport="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="// PANEL"
+                    android:textColor="#bb3333"
+                    android:textSize="11sp"
+                    android:letterSpacing="0.25"
+                    android:layout_marginBottom="12dp" />
+
+                <!-- Control buttons -->
+                <Button
+                    android:id="@+id/browseSiteBtn"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:background="@drawable/bg_card"
+                    android:text="🌐  BROWSE SITE"
+                    android:textColor="#f0f0f0"
+                    android:textSize="14sp"
+                    android:gravity="center|start"
+                    android:paddingLeft="16dp"
+                    android:layout_marginBottom="8dp"
+                    android:stateListAnimator="@null" />
+
+                <Button
+                    android:id="@+id/adminPanelBtn"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:background="@drawable/bg_card"
+                    android:text="☠  ADMIN PANEL"
+                    android:textColor="#f0f0f0"
+                    android:textSize="14sp"
+                    android:gravity="center|start"
+                    android:paddingLeft="16dp"
+                    android:layout_marginBottom="8dp"
+                    android:stateListAnimator="@null" />
+
+                <Button
+                    android:id="@+id/membersBtn"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:background="@drawable/bg_card"
+                    android:text="👥  MEMBERS"
+                    android:textColor="#f0f0f0"
+                    android:textSize="14sp"
+                    android:gravity="center|start"
+                    android:paddingLeft="16dp"
+                    android:layout_marginBottom="8dp"
+                    android:stateListAnimator="@null" />
+
+                <Button
+                    android:id="@+id/requestsBtn"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:background="@drawable/bg_card"
+                    android:text="📋  JOIN REQUESTS"
+                    android:textColor="#f0f0f0"
+                    android:textSize="14sp"
+                    android:gravity="center|start"
+                    android:paddingLeft="16dp"
+                    android:layout_marginBottom="8dp"
+                    android:stateListAnimator="@null" />
+
+                <Button
+                    android:id="@+id/targetsBtn"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:background="@drawable/bg_card"
+                    android:text="🎯  TARGETS"
+                    android:textColor="#f0f0f0"
+                    android:textSize="14sp"
+                    android:gravity="center|start"
+                    android:paddingLeft="16dp"
+                    android:layout_marginBottom="8dp"
+                    android:stateListAnimator="@null" />
+
+                <Button
+                    android:id="@+id/toolsBtn"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:background="@drawable/bg_card"
+                    android:text="🔧  TOOLS"
+                    android:textColor="#f0f0f0"
+                    android:textSize="14sp"
+                    android:gravity="center|start"
+                    android:paddingLeft="16dp"
+                    android:layout_marginBottom="8dp"
+                    android:stateListAnimator="@null" />
+
+                <!-- Terminal section -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="// TERMINAL"
+                    android:textColor="#bb3333"
+                    android:textSize="11sp"
+                    android:letterSpacing="0.25"
+                    android:layout_marginTop="16dp"
+                    android:layout_marginBottom="8dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:background="@drawable/bg_terminal"
+                    android:padding="12dp">
+
+                    <TextView
+                        android:id="@+id/terminalOutput"
+                        android:layout_width="match_parent"
+                        android:layout_height="120dp"
+                        android:textColor="#00cc44"
+                        android:textSize="11sp"
+                        android:background="#000000"
+                        android:padding="8dp"
+                        android:scrollbars="vertical"
+                        android:typeface="monospace" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="40dp"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="8dp">
+
+                        <EditText
+                            android:id="@+id/terminalInput"
+                            android:layout_width="0dp"
+                            android:layout_height="match_parent"
+                            android:layout_weight="1"
+                            android:background="@drawable/bg_input"
+                            android:padding="8dp"
+                            android:textColor="#00cc44"
+                            android:textColorHint="#333333"
+                            android:hint="guest@squad:~$"
+                            android:textSize="11sp"
+                            android:typeface="monospace" />
+
+                        <Button
+                            android:id="@+id/terminalSendBtn"
+                            android:layout_width="60dp"
+                            android:layout_height="match_parent"
+                            android:layout_marginLeft="6dp"
+                            android:background="@drawable/bg_btn_small"
+                            android:text="SEND"
+                            android:textColor="#ffffff"
+                            android:textSize="10sp"
+                            android:stateListAnimator="@null" />
+                    </LinearLayout>
+                </LinearLayout>
+
+            </LinearLayout>
+        </ScrollView>
+    </LinearLayout>
+
+    <!-- WEBVIEW SCREEN -->
+    <LinearLayout
+        android:id="@+id/webviewScreen"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:background="#0a0a0a"
+            android:paddingHorizontal="8dp">
+
+            <Button
+                android:id="@+id/backBtn"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_centerVertical="true"
+                android:background="@drawable/bg_btn_small"
+                android:text="←"
+                android:textColor="#ffffff"
+                android:textSize="16sp"
+                android:stateListAnimator="@null" />
+
+            <Button
+                android:id="@+id/refreshBtn"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_centerInParent="true"
+                android:background="@drawable/bg_btn_small"
+                android:text="↻"
+                android:textColor="#ffffff"
+                android:textSize="16sp"
+                android:stateListAnimator="@null" />
+
+            <Button
+                android:id="@+id/homeBtn"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:background="@drawable/bg_btn_small"
+                android:text="⌂"
+                android:textColor="#ffffff"
+                android:textSize="16sp"
+                android:stateListAnimator="@null" />
+        </RelativeLayout>
+
+        <WebView
+            android:id="@+id/webView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </LinearLayout>
+
+</FrameLayout>

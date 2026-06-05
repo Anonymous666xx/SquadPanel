@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.SquadPanel" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="android:windowBackground">@color/dark</item>
+        <item name="android:statusBarColor">@color/dark</item>
+        <item name="android:navigationBarColor">@color/dark</item>
+        <item name="colorPrimary">@color/red</item>
+        <item name="colorPrimaryDark">@color/border</item>
+        <item name="colorAccent">@color/red</item>
+        <item name="android:textColor">@color/text</item>
+    </style>
+</resources>
