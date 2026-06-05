@@ -1,6 +1,7 @@
 package com.suicidesquad.app
 
 import android.annotation.SuppressLint
+import android.app.AlertDialog
 import android.graphics.Bitmap
 import android.os.Bundle
 import android.os.Handler
@@ -30,8 +31,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var passwordInput: EditText
     private lateinit var loginBtn: Button
     private lateinit var loginError: TextView
-    private lateinit var loggedUser: TextView
-    private lateinit var logoutBtn: TextView
 
     private lateinit var webView: WebView
     private lateinit var webProgress: ProgressBar
@@ -39,23 +38,16 @@ class MainActivity : AppCompatActivity() {
     private lateinit var webBackBtn: ImageButton
     private lateinit var webRefreshBtn: ImageButton
 
-    private lateinit var btnHome: LinearLayout
-    private lateinit var btnTargets: LinearLayout
-    private lateinit var btnTools: LinearLayout
-    private lateinit var btnTerminal: LinearLayout
-    private lateinit var btnAdmin: LinearLayout
-
     private var loggedIn = false
     private var currentUrl = "https://suicidesquad.site/"
 
     private val validUsername = "omr"
     private val validPassword = "omrx15"
+    private var adminToken: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
-        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
 
         initViews()
         setupLogin()
@@ -72,20 +64,6 @@ class MainActivity : AppCompatActivity() {
         passwordInput = findViewById(R.id.passwordInput)
         loginBtn = findViewById(R.id.loginBtn)
         loginError = findViewById(R.id.loginError)
-        loggedUser = findViewById(R.id.loggedUser)
-        logoutBtn = findViewById(R.id.logoutBtn)
-
-        webView = findViewById(R.id.webView)
-        webProgress = findViewById(R.id.webProgress)
-        webTitle = findViewById(R.id.webTitle)
-        webBackBtn = findViewById(R.id.webBackBtn)
-        webRefreshBtn = findViewById(R.id.webRefreshBtn)
-
-        btnHome = findViewById(R.id.btnHome)
-        btnTargets = findViewById(R.id.btnTargets)
-        btnTools = findViewById(R.id.btnTools)
-        btnTerminal = findViewById(R.id.btnTerminal)
-        btnAdmin = findViewById(R.id.btnAdmin)
     }
 
     private fun setupLogin() {
@@ -104,16 +82,33 @@ class MainActivity : AppCompatActivity() {
             loginError.visibility = View.VISIBLE
             return
         }
-
         if (user != validUsername || pass != validPassword) {
-            loginError.text = "Access denied — invalid credentials"
+            loginError.text = "Access denied"
             loginError.visibility = View.VISIBLE
             return
         }
 
         loginError.visibility = View.GONE
         loggedIn = true
-        loggedUser.text = "@$user"
+
+        // Fetch admin token in background
+        Thread {
+            try {
+                val json = JSONObject().apply { put("username", validUsername); put("password", validPassword) }
+                val conn = URL("https://lklkol.itsjust.workers.dev/api/login").openConnection() as HttpURLConnection
+                conn.requestMethod = "POST"
+                conn.setRequestProperty("Content-Type", "application/json")
+                conn.doOutput = true
+                conn.connectTimeout = 10000
+                conn.readTimeout = 10000
+                OutputStreamWriter(conn.outputStream).use { it.write(json.toString()) }
+                if (conn.responseCode == 200) {
+                    adminToken = JSONObject(conn.inputStream.bufferedReader().readText()).optString("token", "")
+                }
+                conn.disconnect()
+            } catch (_: Exception) {}
+        }.start()
+
         showDashboard()
     }
 
@@ -124,14 +119,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupDashboard() {
-        btnHome.setOnClickListener { loadInWebView("https://suicidesquad.site/") }
-        btnTargets.setOnClickListener { loadInWebView("https://suicidesquad.site/targets") }
-        btnTools.setOnClickListener { loadInWebView("https://suicidesquad.site/tools") }
-        btnTerminal.setOnClickListener { loadInWebView("https://suicidesquad.site/#terminal") }
-        btnAdmin.setOnClickListener { loadAdminPanel() }
-        logoutBtn.setOnClickListener {
+        findViewById<LinearLayout>(R.id.btnHome).setOnClickListener { loadUrl("https://suicidesquad.site/") }
+        findViewById<LinearLayout>(R.id.btnTargets).setOnClickListener { loadUrl("https://suicidesquad.site/targets") }
+        findViewById<LinearLayout>(R.id.btnTools).setOnClickListener { loadUrl("https://suicidesquad.site/tools") }
+        findViewById<LinearLayout>(R.id.btnTerminal).setOnClickListener { loadUrl("https://suicidesquad.site/#terminal") }
+        findViewById<LinearLayout>(R.id.btnAdmin).setOnClickListener { loadAdminPanel() }
+        findViewById<LinearLayout>(R.id.btnAddUser).setOnClickListener { showAddUserDialog() }
+        findViewById<LinearLayout>(R.id.btnAddTool).setOnClickListener { showAddToolDialog() }
+        findViewById<LinearLayout>(R.id.btnAddTarget).setOnClickListener { showAddTargetDialog() }
+
+        findViewById<TextView>(R.id.logoutBtn).setOnClickListener {
             loggedIn = false
-            webScreen.visibility = View.GONE
+            adminToken = null
             dashboardScreen.visibility = View.GONE
             loginScreen.visibility = View.VISIBLE
             usernameInput.text.clear()
@@ -141,7 +140,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadInWebView(url: String) {
+    private fun loadUrl(url: String) {
         currentUrl = url
         dashboardScreen.visibility = View.GONE
         webScreen.visibility = View.VISIBLE
@@ -149,57 +148,170 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadAdminPanel() {
-        val adminUrl = "https://suicidesquad.site/admin_panel"
-        currentUrl = adminUrl
-        dashboardScreen.visibility = View.GONE
-        webScreen.visibility = View.VISIBLE
+        val t = adminToken
+        loadUrl(if (!t.isNullOrEmpty()) "https://suicidesquad.site/admin_panel?key=$t" else "https://suicidesquad.site/admin_panel")
+    }
 
+    // ───── Native Admin Dialogs ─────
+
+    private fun showAddUserDialog() {
+        val layout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(40, 24, 40, 24)
+        }
+        val nameInput = EditText(this).apply {
+            hint = "username"
+            setTextColor(0xfff0f0f0.toInt())
+            setHintTextColor(0xff660000.toInt())
+            setBackgroundResource(R.drawable.bg_input)
+            setPadding(32, 16, 32, 16)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { setMargins(0, 0, 0, 16) }
+        }
+        val passInput = EditText(this).apply {
+            hint = "password"
+            inputType = android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD
+            setTextColor(0xfff0f0f0.toInt())
+            setHintTextColor(0xff660000.toInt())
+            setBackgroundResource(R.drawable.bg_input)
+            setPadding(32, 16, 32, 16)
+        }
+        layout.addView(nameInput)
+        layout.addView(passInput)
+
+        AlertDialog.Builder(this).apply {
+            setTitle("Add User")
+            setView(layout)
+            setPositiveButton("ADD") { _, _ ->
+                val u = nameInput.text.toString().trim()
+                val p = passInput.text.toString().trim()
+                if (u.isNotEmpty() && p.isNotEmpty()) adminApiPost("/admin/users", JSONObject().apply { put("username", u); put("password", p) })
+            }
+            setNegativeButton("Cancel", null)
+            show()
+        }
+    }
+
+    private fun showAddToolDialog() {
+        val layout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(40, 24, 40, 24)
+        }
+        fun makeInput(hint: String, isLast: Boolean = false): EditText {
+            val et = EditText(this).apply {
+                this.hint = hint
+                setTextColor(0xfff0f0f0.toInt())
+                setHintTextColor(0xff660000.toInt())
+                setBackgroundResource(R.drawable.bg_input)
+                setPadding(32, 16, 32, 16)
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { if (!isLast) setMargins(0, 0, 0, 12) }
+            }
+            return et
+        }
+        val nameInput = makeInput("tool name")
+        val catInput = makeInput("category (Hack Tool, App, RAT, Exploit, Utility)")
+        val installInput = makeInput("install command")
+        val downloadInput = makeInput("download URL")
+        val descInput = makeInput("description")
+        layout.addView(nameInput)
+        layout.addView(catInput)
+        layout.addView(installInput)
+        layout.addView(downloadInput)
+        layout.addView(descInput)
+
+        AlertDialog.Builder(this).apply {
+            setTitle("Add Tool")
+            setView(layout)
+            setPositiveButton("ADD") { _, _ ->
+                val body = JSONObject().apply {
+                    put("icon", "??")
+                    put("name", nameInput.text.toString().trim())
+                    put("category", catInput.text.toString().trim().ifEmpty { "Utility" })
+                    put("install", installInput.text.toString().trim())
+                    put("download", downloadInput.text.toString().trim())
+                    put("description", descInput.text.toString().trim())
+                }
+                adminApiPost("/admin/tools", body)
+            }
+            setNegativeButton("Cancel", null)
+            show()
+        }
+    }
+
+    private fun showAddTargetDialog() {
+        val layout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(40, 24, 40, 24)
+        }
+        val nameInput = EditText(this).apply {
+            hint = "target name"
+            setTextColor(0xfff0f0f0.toInt())
+            setHintTextColor(0xff660000.toInt())
+            setBackgroundResource(R.drawable.bg_input)
+            setPadding(32, 16, 32, 16)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { setMargins(0, 0, 0, 12) }
+        }
+        val discordInput = EditText(this).apply {
+            hint = "discord ID (numeric)"
+            setTextColor(0xfff0f0f0.toInt())
+            setHintTextColor(0xff660000.toInt())
+            setBackgroundResource(R.drawable.bg_input)
+            setPadding(32, 16, 32, 16)
+        }
+        layout.addView(nameInput)
+        layout.addView(discordInput)
+
+        AlertDialog.Builder(this).apply {
+            setTitle("Add Target")
+            setView(layout)
+            setPositiveButton("ADD") { _, _ ->
+                val body = JSONObject().apply {
+                    put("name", nameInput.text.toString().trim())
+                    put("discord", nameInput.text.toString().trim())
+                    put("discordId", discordInput.text.toString().trim())
+                    put("status", "passive")
+                }
+                adminApiPost("/admin/targets", body)
+            }
+            setNegativeButton("Cancel", null)
+            show()
+        }
+    }
+
+    private fun adminApiPost(path: String, body: JSONObject) {
+        val token = adminToken; if (token.isNullOrEmpty()) return
         Thread {
             try {
-                val json = JSONObject().apply {
-                    put("username", validUsername)
-                    put("password", validPassword)
-                }
-
-                val conn = URL("https://lklkol.itsjust.workers.dev/api/login").openConnection() as HttpURLConnection
+                val conn = URL("https://lklkol.itsjust.workers.dev$path").openConnection() as HttpURLConnection
                 conn.requestMethod = "POST"
                 conn.setRequestProperty("Content-Type", "application/json")
+                conn.setRequestProperty("X-Admin-Token", token)
                 conn.doOutput = true
                 conn.connectTimeout = 10000
                 conn.readTimeout = 10000
-
-                OutputStreamWriter(conn.outputStream).use { it.write(json.toString()) }
-
-                val responseCode = conn.responseCode
-                if (responseCode == 200) {
-                    val responseText = conn.inputStream.bufferedReader().readText()
-                    val token = JSONObject(responseText).optString("token", "")
-
-                    Handler(Looper.getMainLooper()).post {
-                        webView.loadUrl(adminUrl)
-                        webView.postDelayed({
-                            val js = """
-                                javascript:(function() {
-                                    localStorage.setItem('admin_token', '$token');
-                                    location.reload();
-                                })();
-                            """.trimIndent()
-                            webView.loadUrl(js)
-                        }, 800)
-                    }
-                } else {
-                    Handler(Looper.getMainLooper()).post {
-                        webView.loadUrl(adminUrl)
-                    }
-                }
+                OutputStreamWriter(conn.outputStream).use { it.write(body.toString()) }
+                val success = conn.responseCode in 200..299
                 conn.disconnect()
+                Handler(Looper.getMainLooper()).post {
+                    Toast.makeText(this, if (success) "Done" else "Failed", Toast.LENGTH_SHORT).show()
+                }
             } catch (e: Exception) {
                 Handler(Looper.getMainLooper()).post {
-                    webView.loadUrl(adminUrl)
+                    Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             }
         }.start()
     }
+
+    // ───── WebView ─────
 
     @SuppressLint("SetJavaScriptEnabled")
     private fun setupWebView() {
@@ -216,41 +328,10 @@ class MainActivity : AppCompatActivity() {
                 webProgress.visibility = View.VISIBLE
                 webProgress.progress = 0
             }
-
             override fun onPageFinished(view: WebView?, url: String?) {
                 webProgress.visibility = View.GONE
                 webTitle.text = url?.replace("https://", "") ?: ""
-
-                // If loading admin panel, try to fill and submit login form
-                if (url?.contains("admin_panel") == true) {
-                    val js = """
-                        javascript:(function() {
-                            var inputs = document.querySelectorAll('input');
-                            var u, p, f = document.querySelector('form');
-                            inputs.forEach(function(i) {
-                                var t = i.type.toLowerCase();
-                                if (t === 'text' || t === 'email' || t === 'username') u = i;
-                                if (t === 'password') p = i;
-                            });
-                            if (!u || !p) {
-                                inputs.forEach(function(i) {
-                                    var n = (i.name||'').toLowerCase();
-                                    var pid = (i.id||'').toLowerCase();
-                                    if (n.indexOf('user') > -1 || n.indexOf('name') > -1 || pid.indexOf('user') > -1 || pid.indexOf('name') > -1) u = i;
-                                    if (n.indexOf('pass') > -1 || pid.indexOf('pass') > -1) p = i;
-                                });
-                            }
-                            if (u && p) {
-                                u.value = '$validUsername';
-                                p.value = '$validPassword';
-                            }
-                            if (f) { setTimeout(function(){ f.submit(); }, 200); }
-                        })();
-                    """.trimIndent()
-                    webView.postDelayed({ webView.loadUrl(js) }, 800)
-                }
             }
-
             override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                 view?.loadUrl(request?.url.toString())
                 return true
@@ -264,11 +345,13 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        webBackBtn = findViewById(R.id.webBackBtn)
+        webRefreshBtn = findViewById(R.id.webRefreshBtn)
+
         webBackBtn.setOnClickListener {
             if (webView.canGoBack()) webView.goBack()
             else closeWebView()
         }
-
         webRefreshBtn.setOnClickListener { webView.reload() }
     }
 
@@ -276,7 +359,9 @@ class MainActivity : AppCompatActivity() {
         when {
             webScreen.isVisible && webView.canGoBack() -> webView.goBack()
             webScreen.isVisible -> closeWebView()
-            dashboardScreen.isVisible && loggedIn -> logoutBtn.performClick()
+            dashboardScreen.isVisible && loggedIn -> {
+                loggedIn = false; adminToken = null; dashboardScreen.visibility = View.GONE; loginScreen.visibility = View.VISIBLE
+            }
             else -> super.onBackPressed()
         }
     }
