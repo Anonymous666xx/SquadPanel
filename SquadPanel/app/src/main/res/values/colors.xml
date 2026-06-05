@@ -10,6 +10,6 @@
     <color name="dim">#bbbbbb</color>
     <color name="green">#00cc44</color>
     <color name="yellow">#ffaa00</color>
-    <color name="cyan">#00e5ff</color>
     <color name="white">#ffffff</color>
+    <color name="ic_launcher_background">#000000</color>
 </resources>

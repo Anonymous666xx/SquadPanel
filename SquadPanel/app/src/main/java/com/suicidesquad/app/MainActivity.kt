@@ -9,9 +9,8 @@ import android.webkit.WebViewClient
 import android.widget.*
 import android.app.AlertDialog
 import android.content.DialogInterface
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import androidx.webkit.WebSettingsCompat
-import androidx.webkit.WebViewFeature
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.BufferedReader
@@ -19,7 +18,6 @@ import java.io.InputStreamReader
 import java.io.OutputStreamWriter
 import java.net.HttpURLConnection
 import java.net.URL
-import java.net.URLEncoder
 
 class MainActivity : AppCompatActivity() {
 
@@ -55,15 +53,18 @@ class MainActivity : AppCompatActivity() {
 
     private var adminToken: String? = null
     private var currentUser: String = ""
-    private var currentUrl: String = SITE_URL
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-
-        bindViews()
-        setupWebView()
-        setupListeners()
+        try {
+            setContentView(R.layout.activity_main)
+            bindViews()
+            setupWebView()
+            setupListeners()
+        } catch (e: Exception) {
+            Log.e("SquadPanel", "onCreate crash", e)
+            Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+        }
     }
 
     private fun bindViews() {
@@ -96,32 +97,30 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupWebView() {
-        webView.settings.javaScriptEnabled = true
-        webView.settings.domStorageEnabled = true
-        webView.settings.allowFileAccess = false
-        webView.settings.loadWithOverviewMode = true
-        webView.settings.useWideViewPort = true
-        webView.settings.setSupportZoom(true)
-        webView.settings.builtInZoomControls = true
-        webView.settings.displayZoomControls = false
+        try {
+            webView.settings.javaScriptEnabled = true
+            webView.settings.domStorageEnabled = true
+            webView.settings.allowFileAccess = false
+            webView.settings.loadWithOverviewMode = true
+            webView.settings.useWideViewPort = true
+            webView.settings.setSupportZoom(true)
+            webView.settings.builtInZoomControls = true
+            webView.settings.displayZoomControls = false
 
-        if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
-            WebSettingsCompat.setForceDark(webView.settings, WebSettingsCompat.FORCE_DARK_ON)
-        }
-
-        webView.webViewClient = object : WebViewClient() {
-            override fun onPageFinished(view: WebView?, url: String?) {
-                url?.let { currentUrl = it }
+            webView.webViewClient = object : WebViewClient() {
+                override fun onPageFinished(view: WebView?, url: String?) {
+                }
             }
+            webView.webChromeClient = WebChromeClient()
+        } catch (e: Exception) {
+            Log.e("SquadPanel", "WebView setup error", e)
         }
-        webView.webChromeClient = WebChromeClient()
     }
 
     private fun setupListeners() {
         passwordInput.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_DONE) {
-                doLogin()
-                true
+                doLogin(); true
             } else false
         }
 
@@ -137,8 +136,7 @@ class MainActivity : AppCompatActivity() {
         terminalSendBtn.setOnClickListener { sendTerminalCommand() }
         terminalInput.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_SEND) {
-                sendTerminalCommand()
-                true
+                sendTerminalCommand(); true
             } else false
         }
 
@@ -196,7 +194,7 @@ class MainActivity : AppCompatActivity() {
                             return@runOnUiThread
                         }
 
-                        userLabel.text = "☠ $currentUser"
+                        userLabel.text = "$currentUser"
                         showScreen("dashboard")
                         terminalPrint("Authenticated as $currentUser")
                     } else {
@@ -240,7 +238,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun loadUrl(url: String) {
-        currentUrl = url
         webView.loadUrl(url)
         showScreen("webview")
     }
@@ -269,7 +266,6 @@ class MainActivity : AppCompatActivity() {
     // ─── TERMINAL ──────────────────────────────────────────
 
     private var termState = "idle"
-    private var termUser = ""
     private var termTempUser = ""
 
     private fun terminalPrint(text: String) {
@@ -299,12 +295,8 @@ class MainActivity : AppCompatActivity() {
                         terminalPrint("username:")
                     }
                     "clear" -> terminalOutput.text = ""
-                    "help" -> {
-                        terminalPrint("Commands: login, admin, clear, help")
-                    }
-                    else -> {
-                        terminalPrint("Unknown command. Type 'help'")
-                    }
+                    "help" -> terminalPrint("Commands: login, admin, clear, help")
+                    else -> terminalPrint("Unknown command. Type 'help'")
                 }
             }
             "await_user" -> {
@@ -345,21 +337,19 @@ class MainActivity : AppCompatActivity() {
                                 val json = JSONObject(responseText)
                                 adminToken = json.optString("token")
                                 currentUser = json.optString("username", user)
-                                userLabel.text = "☠ $currentUser"
-                                terminalPrint("\u2714 Authenticated as $currentUser")
+                                userLabel.text = "$currentUser"
+                                terminalPrint("Authenticated as $currentUser")
                             } else {
                                 try {
                                     val errJson = JSONObject(responseText)
-                                    terminalPrint("\u2718 ${errJson.optString("error", "Failed")}")
+                                    terminalPrint("${errJson.optString("error", "Failed")}")
                                 } catch (_: Exception) {
-                                    terminalPrint("\u2718 Auth failed ($code)")
+                                    terminalPrint("Auth failed ($code)")
                                 }
                             }
                         }
                     } catch (e: Exception) {
-                        runOnUiThread {
-                            terminalPrint("\u2718 Error: ${e.message}")
-                        }
+                        runOnUiThread { terminalPrint("Error: ${e.message}") }
                     }
                 }.start()
             }
@@ -370,29 +360,25 @@ class MainActivity : AppCompatActivity() {
 
     private fun apiFetch(method: String, path: String, body: String? = null): String? {
         val token = adminToken ?: return null
-        try {
-            val url = URL("$WORKER_URL$path")
-            val conn = url.openConnection() as HttpURLConnection
-            conn.requestMethod = method
-            conn.setRequestProperty("Content-Type", "application/json")
-            conn.setRequestProperty("X-Admin-Token", token)
-            conn.connectTimeout = 15000
-            conn.readTimeout = 15000
+        val url = URL("$WORKER_URL$path")
+        val conn = url.openConnection() as HttpURLConnection
+        conn.requestMethod = method
+        conn.setRequestProperty("Content-Type", "application/json")
+        conn.setRequestProperty("X-Admin-Token", token)
+        conn.connectTimeout = 15000
+        conn.readTimeout = 15000
 
-            if (body != null) {
-                conn.doOutput = true
-                OutputStreamWriter(conn.outputStream).use { it.write(body) }
-            }
+        if (body != null) {
+            conn.doOutput = true
+            OutputStreamWriter(conn.outputStream).use { it.write(body) }
+        }
 
-            val code = conn.responseCode
-            return if (code in 200..299) {
-                BufferedReader(InputStreamReader(conn.inputStream)).readText()
-            } else {
-                val err = BufferedReader(InputStreamReader(conn.errorStream)).readText()
-                throw Exception("HTTP $code: $err")
-            }
-        } catch (e: Exception) {
-            throw e
+        val code = conn.responseCode
+        return if (code in 200..299) {
+            BufferedReader(InputStreamReader(conn.inputStream)).readText()
+        } else {
+            val err = BufferedReader(InputStreamReader(conn.errorStream)).readText()
+            throw Exception("HTTP $code: $err")
         }
     }
 
@@ -435,29 +421,25 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showAddMemberDialog() {
-        val inflater = layoutInflater
-        val view = inflater.inflate(android.R.layout.simple_list_item_1, null) as TextView
-        view.visibility = View.GONE
-
         val inputName = EditText(this).apply {
             setHint("Name")
             setTextColor(-0x10101)
             setHintTextColor(-0x99999a)
-            setBackgroundDrawable(resources.getDrawable(R.drawable.bg_input, theme))
+            setBackgroundResource(R.drawable.bg_input)
             setPadding(16, 12, 16, 12)
         }
         val inputNick = EditText(this).apply {
             setHint("Nickname/Handle")
             setTextColor(-0x10101)
             setHintTextColor(-0x99999a)
-            setBackgroundDrawable(resources.getDrawable(R.drawable.bg_input, theme))
+            setBackgroundResource(R.drawable.bg_input)
             setPadding(16, 12, 16, 12)
         }
         val inputAge = EditText(this).apply {
             setHint("Age")
             setTextColor(-0x10101)
             setHintTextColor(-0x99999a)
-            setBackgroundDrawable(resources.getDrawable(R.drawable.bg_input, theme))
+            setBackgroundResource(R.drawable.bg_input)
             setPadding(16, 12, 16, 12)
             inputType = android.text.InputType.TYPE_CLASS_NUMBER
         }
@@ -465,14 +447,14 @@ class MainActivity : AppCompatActivity() {
             setHint("Discord")
             setTextColor(-0x10101)
             setHintTextColor(-0x99999a)
-            setBackgroundDrawable(resources.getDrawable(R.drawable.bg_input, theme))
+            setBackgroundResource(R.drawable.bg_input)
             setPadding(16, 12, 16, 12)
         }
         val inputRole = EditText(this).apply {
             setHint("Role")
             setTextColor(-0x10101)
             setHintTextColor(-0x99999a)
-            setBackgroundDrawable(resources.getDrawable(R.drawable.bg_input, theme))
+            setBackgroundResource(R.drawable.bg_input)
             setPadding(16, 12, 16, 12)
         }
 
@@ -485,12 +467,10 @@ class MainActivity : AppCompatActivity() {
             addView(inputDiscord)
             addView(inputRole)
             for (i in 0 until childCount) {
-                getChildAt(i).let {
-                    val lp = it.layoutParams
-                    if (lp is LinearLayout.LayoutParams) {
-                        lp.setMargins(0, 0, 0, 8)
-                        it.layoutParams = lp
-                    }
+                val lp = getChildAt(i).layoutParams
+                if (lp is LinearLayout.LayoutParams) {
+                    lp.setMargins(0, 0, 0, 8)
+                    getChildAt(i).layoutParams = lp
                 }
             }
         }
@@ -583,7 +563,7 @@ class MainActivity : AppCompatActivity() {
             setHint("Request ID")
             setTextColor(-0x10101)
             setHintTextColor(-0x99999a)
-            setBackgroundDrawable(resources.getDrawable(R.drawable.bg_input, theme))
+            setBackgroundResource(R.drawable.bg_input)
             setPadding(16, 12, 16, 12)
         }
 
