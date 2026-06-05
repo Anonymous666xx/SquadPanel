@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg">#000000</color>
+    <color name="bg2">#0a0a0a</color>
+    <color name="bg3">#111111</color>
+    <color name="accent">#cc0000</color>
+    <color name="accent2">#ff1a1a</color>
+    <color name="accent3">#bb3333</color>
+    <color name="text">#f0f0f0</color>
+    <color name="text2">#bbbbbb</color>
+    <color name="text3">#660000</color>
+    <color name="border">#330000</color>
+    <color name="green">#00ff88</color>
+    <color name="cyan">#00e5ff</color>
+    <color name="card">#0a0a0a</color>
+    <color name="card_border">#330000</color>
+</resources>
